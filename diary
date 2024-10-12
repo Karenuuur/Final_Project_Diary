@@ -23,6 +23,9 @@ start_canvas.pack(fill="both", expand=True)
 # This will add the image to the canvas
 start_canvas.create_image(0, 0, image=bg, anchor="nw")
 
+# This is the label for the password window (cute quotes)
+start_canvas.create_text(200, 40, text="Your secrets are safe with me!", font=("courier", 12), fill="#D17B85")
+
 # This is for the entry box
 password_entry = Entry(root, width=17, font=16, fg="#D17B85", bd=0)
 password_entry.insert(0, "Password")
@@ -120,6 +123,11 @@ def open_entry(history_listbox):
             image_label = Label(edit_window, image=photo, bg="#FEDADC")
             image_label.image = photo
             image_label.place(relx=1.0, rely=1.0, anchor="se")
+
+            # this is the label for the main diary
+            edit_text_label= Label(edit_window, text="Pretty in Pink!", font=("courier", 16), bg="#FEDADC", fg="#D17B85")
+            edit_text_label.place(relx=0.0, rely=1.0, anchor="sw")
+    
         
         except Exception as e:
             messagebox.showerror("Error",f"Failed to open diary entry: {e}")
@@ -220,7 +228,10 @@ def open_diary():
     image_label.image = photo
     image_label.place(relx=1.0, rely=1.0, anchor="se")
 
-
+    # this is the label for the main diary (cute quotes)
+    main_text_label= Label(root, text="Positive Vibes Only", font=("courier", 14), bg="#FEDADC", fg="#D17B85")
+    main_text_label.place(relx=0.0, rely=1.0, anchor="sw")
+    
 # This is the function to check the password and open the diary
 def check_password():
     # this is the password to open the diary
@@ -231,7 +242,7 @@ def check_password():
         messagebox.showerror("Error", "Wrong Password!")
 
 # This is the button to submit the password
-enter_button = Button(root, text="Submit", width=16, fg="#D17B85", pady=4, font=("courier", 10), command=check_password)
+enter_button = Button(root, text="Submit", width=18, fg="#D17B85", pady=4, font=("courier", 10), command=check_password)
 enter_button_window = start_canvas.create_window(120, 300, anchor="w", window=enter_button)
 
 root.mainloop()
