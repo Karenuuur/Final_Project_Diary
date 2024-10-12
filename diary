@@ -1,0 +1,237 @@
+from tkinter import *
+from tkinter import messagebox
+from tkinter import filedialog
+from PIL import ImageTk, Image
+import datetime
+import os
+
+# this is the window aesthetic, similar on all windows 
+root = Tk()
+root.title('Cutie Pie Diary')
+root.iconbitmap('icon.ico')
+root.config(cursor='heart')
+root.geometry("400x400")
+root.resizable(False, False)
+
+# This will define the background image 
+bg = ImageTk.PhotoImage(file="images/new_gradient.png")
+
+# This is to create the canvas
+start_canvas = Canvas(root, width=400, height=400, bd=0, highlightthickness=0)
+start_canvas.pack(fill="both", expand=True)
+
+# This will add the image to the canvas
+start_canvas.create_image(0, 0, image=bg, anchor="nw")
+
+# This is for the entry box
+password_entry = Entry(root, width=17, font=16, fg="#D17B85", bd=0)
+password_entry.insert(0, "Password")
+password_window = start_canvas.create_window(120, 260, anchor="w", window=password_entry)
+
+# Clear the password off when entry bar is clicked
+def entry_clear(e):
+    if password_entry.get() == "Password":
+        password_entry.delete(0, END)
+    password_entry.config(show="*")
+
+password_entry.bind("<FocusIn>", entry_clear)
+
+# This function is to save the diary entry and show either saved or Empty entry message boxes
+def save_entry(main_text):
+    entry_text = main_text.get("1.0", END).strip()
+    if entry_text:
+        date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"Diary_{date_str}.txt"
+        with open(filename, "w") as file:
+            file.write(entry_text)
+            # this tells the user that their entry was saved
+            messagebox.showinfo("Saved", f"Saved as {filename}")
+            main_text.delete("1.0", END)
+    else:
+        messagebox.showwarning("No Entry", "Empty entry!")
+
+# This is the function that will allow user to select and delete an entry
+def delete_entry(history_listbox):
+    # this is what allows selection
+    selected = history_listbox.curselection()
+    if selected:
+        # this deletes the previously selected entry
+        filename = history_listbox.get(selected[0])
+        os.remove(filename)
+        history_listbox.delete(selected[0])
+        # this is to tell the user that its been deleted 
+        messagebox.showinfo("Deleted", f"{filename} has been deleted")
+    else:
+        # This warns the user that theres nothing selected and to select an entry to use the delete button
+        messagebox.showwarning("No selection", "Select an entry to delete")
+        
+# This is to read and edit previous entries
+def open_entry(history_listbox):
+    # This will allow user to select one of the previously save entries
+    selected = history_listbox.curselection()
+    # this is to save the selected entry
+    if selected:
+        filename = history_listbox.get(selected[0])
+        try:
+            with open(filename, "r") as file:
+                content= file.read()
+            
+            # This is to create a brand new window where entries can be edited
+            # This also keeps a similar aesthetic to the rest of the program
+            edit_window = Toplevel()
+            edit_window.title(f"Editing {filename}")
+            edit_window.iconbitmap("icon.ico")
+            edit_window.config(cursor="heart", bg="#FEDADC")
+            edit_window.geometry("500x750")
+            edit_window.resizable(False, False)
+            # Frame to enter a scroll bar
+            edit_frame = Frame(edit_window)
+            edit_scroll = Scrollbar(edit_frame, orient=VERTICAL)
+
+            # This is the box to be able to write in the diary
+            edit_text = Text(edit_frame, width=30, height=25, pady=10, padx=10 , bg="white", fg="#D17B85", font=("courier", 16), yscrollcommand=edit_scroll.set)
+            edit_text.insert("1.0", content)
+            edit_text.grid(row=0, column=0)
+            
+            # This is the scroll bar specifications
+            edit_scroll.config(command=edit_text.yview)
+            edit_scroll.grid(row=0, column=1, sticky='ns')
+            edit_frame.grid(row=0, column=0, columnspan=2, pady=(10,0), padx=(40,50))
+            
+            def save_changes():
+                new_entry= edit_text.get("1.0",END).strip()
+                with open(filename, "w") as file:
+                    file.write(new_entry)
+                messagebox.showinfo("Saved", f"{filename} has been updated")
+                edit_window.destroy()
+            
+            # This button is to save the changes to the diary entries
+            save_button1 = Button(edit_window, text="Save Changes", width=20, fg="#D17B85", pady=4, font=("courier", 10), command=save_changes)
+            save_button1.grid(row=1, column=0, padx=(5,0), pady=(20,0))
+
+            # This is to add an image to the bottom corner 
+            # this loads the image
+            image= Image.open("images/jump_bunny.png")
+            # Should fit the picture to the corner
+            image= image.resize((140,140), Image.Resampling.LANCZOS)
+            # renames the now small picture
+            photo = ImageTk.PhotoImage(image)
+            # the is the label to place the image
+            image_label = Label(edit_window, image=photo, bg="#FEDADC")
+            image_label.image = photo
+            image_label.place(relx=1.0, rely=1.0, anchor="se")
+        
+        except Exception as e:
+            messagebox.showerror("Error",f"Failed to open diary entry: {e}")
+    else:
+            messagebox.showwarning("Nothing Selected","Select an entry to edit")
+        
+# This is to stop the history window from opening a million times 
+global counter
+counter= 1 
+
+# This is the function to view any previous entries 
+def view_history():
+    global counter
+    if counter <2:
+        # this is the window aesthetic, similar on all windows 
+        history_window = Toplevel()
+        history_window.title("History")
+        history_window.iconbitmap("icon.ico")
+        history_window.config(cursor="heart", bg="#FEDADC")
+        history_window.geometry("400x800")
+        history_window.resizable(False, False)
+   
+        # This is where all the entries are going to be seen 
+        history_listbox = Listbox(history_window, width=20, height=19, fg="#D17B85", font=("courier", 22))
+        history_listbox.pack(pady=20)
+
+        # These are the buttons for the history window
+        history_close = Button(history_window, text="Close", width=16, fg="#D17B85", pady=4, padx= 4, font=("courier", 10), command=history_window.destroy)
+        history_close.pack(pady=(5,0))
+
+        delete_button = Button(history_window, text="Delete", width=16, fg="#D17B85", pady=4, padx=4, font=("courier", 10), command= lambda: delete_entry(history_listbox))
+        delete_button.pack(pady=(5,0))
+    
+        open_button = Button(history_window, text="Open", width=16, fg="#D17B85", pady=4, padx=4, font=("courier", 10), command= lambda: open_entry(history_listbox))
+        open_button.pack(pady=(5,0))
+
+        # This is to add an image to the bottom corner 
+        # this loads the image
+        image= Image.open("images/jump_bunny.png")
+        # Should fit the picture to the corner
+        image= image.resize((110,110), Image.Resampling.LANCZOS)
+        # renames the now small picture
+        photo = ImageTk.PhotoImage(image)
+        # the is the label to place the image
+        image_label = Label(history_window, image=photo, bg="#FEDADC")
+        image_label.image = photo
+        image_label.place(relx=1.0, rely=1.0, anchor="se")
+
+        # This is so that the user can see all the past diary entries
+        for filename in os.listdir():
+            if filename.startswith("Diary_") and filename.endswith(".txt"):
+                history_listbox.insert(END, filename)   
+
+# This is the new window that's opened when the password entered is correct 
+def open_diary():
+    # Clear existing widgets from the root window so that the text entry part will show
+    for widget in root.winfo_children():
+        widget.destroy()
+
+    # this is the window aesthetic, similar on all windows 
+    root.title("Cutie Pie Diary")
+    root.iconbitmap('icon.ico')
+    root.config(cursor='heart', bg="#FEDADC")
+    root.geometry("500x750")
+
+    # Frame to enter a scroll bar
+    text_frame = Frame(root)
+    text_scroll = Scrollbar(text_frame, orient=VERTICAL)
+
+    # This is the box to be able to write in the diary
+    main_text = Text(text_frame, width=30, height=25, pady=10, padx=10 , bg="white", fg="#D17B85", font=("courier", 16), yscrollcommand=text_scroll.set)
+    main_text.grid(row=0, column=0)
+
+    # This is the scroll bar specifications
+    text_scroll.config(command=main_text.yview)
+    text_scroll.grid(row=0, column=1, sticky='ns')
+    text_frame.grid(row=0, column=0, columnspan=2, pady=(10,0), padx=(40,50))
+
+    # These are the buttons on the text entry screen
+    save_button = Button(root, text="Save", width=16, fg="#D17B85", pady=4, font=("courier", 10), command=lambda: save_entry(main_text))
+    save_button.grid(row=1, column=0, padx=(5,0), pady=(20,0))
+
+    exit_button = Button(root, text="Logout", width=16, fg="#D17B85", pady=4, font=("courier", 10), command=root.quit)
+    exit_button.grid(row=1, column=1, padx=(5,0), pady=(20,0))
+
+    history_button = Button(root, text="History", width=16, fg="#D17B85", pady=4, font=("courier", 10), command=view_history)
+    history_button.grid(row=2, column=0, columnspan=2, pady=(20,0))
+
+    # This is to add an image to the bottom corner 
+    # this loads the image
+    image= Image.open("images/jump_bunny.png")
+    # Should fit the picture to the corner
+    image= image.resize((80,80), Image.Resampling.LANCZOS)
+    # renames the now small picture
+    photo = ImageTk.PhotoImage(image)
+    # the is the label to place the image
+    image_label = Label(root, image=photo, bg="#FEDADC")
+    image_label.image = photo
+    image_label.place(relx=1.0, rely=1.0, anchor="se")
+
+
+# This is the function to check the password and open the diary
+def check_password():
+    # this is the password to open the diary
+    if password_entry.get() == "1111":  
+        open_diary()
+    else:
+        # this is a pop-up to inform user that the wrong passowrd was used
+        messagebox.showerror("Error", "Wrong Password!")
+
+# This is the button to submit the password
+enter_button = Button(root, text="Submit", width=16, fg="#D17B85", pady=4, font=("courier", 10), command=check_password)
+enter_button_window = start_canvas.create_window(120, 300, anchor="w", window=enter_button)
+
+root.mainloop()
